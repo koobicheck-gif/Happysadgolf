@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import MastersHeader from '@/components/ui/MastersHeader'
@@ -13,6 +13,7 @@ import { saveGame, setCurrentGameId } from '@/lib/storage'
 import { Game, Hole, Player } from '@/types'
 import { DEFAULT_PARS_18, DEFAULT_PARS_9 } from '@/lib/defaultPars'
 import { recordPlayed } from '@/lib/notifications'
+import { getApiKey, saveApiKey } from '@/lib/courseApi'
 
 export default function NewGame() {
   const router = useRouter()
@@ -25,6 +26,24 @@ export default function NewGame() {
   const [showParEditor, setShowParEditor] = useState(false)
   const [showHandicapFields, setShowHandicapFields] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [showApiKeyPanel, setShowApiKeyPanel] = useState(false)
+  const [apiKeyInput, setApiKeyInput] = useState('')
+  const [apiKeyActive, setApiKeyActive] = useState(false)
+  const [apiKeySaved, setApiKeySaved] = useState(false)
+
+  useEffect(() => {
+    const existing = getApiKey()
+    setApiKeyActive(existing.length > 0)
+    setApiKeyInput(existing)
+  }, [])
+
+  const handleSaveApiKey = () => {
+    saveApiKey(apiKeyInput)
+    setApiKeyActive(apiKeyInput.trim().length > 0)
+    setApiKeySaved(true)
+    setShowApiKeyPanel(false)
+    setTimeout(() => setApiKeySaved(false), 3000)
+  }
 
   const handleTotalHolesChange = (n: 9 | 18) => {
     setTotalHoles(n)
@@ -99,7 +118,65 @@ export default function NewGame() {
               Course Name <span className="text-red-400">*</span>
             </label>
             <CourseSearch value={courseName} onChange={setCourseName} onCourseSelect={handleCourseSelect} />
-            <p className="text-xs text-gray-300 mt-2">Search 25+ famous courses — pars &amp; ratings auto-fill</p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-gray-300">
+                {apiKeyActive
+                  ? '🌐 Live search active — any course worldwide'
+                  : 'Search 25+ featured courses'}
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowApiKeyPanel(s => !s)}
+                className="text-xs text-masters-green underline shrink-0 ml-2"
+              >
+                {apiKeyActive ? 'Change key' : '+ Live search'}
+              </button>
+            </div>
+            {apiKeySaved && (
+              <p className="text-xs text-green-600 mt-1">✓ API key saved — live course search enabled</p>
+            )}
+            <AnimatePresence>
+              {showApiKeyPanel && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-3 border-t border-gray-100 mt-3">
+                    <p className="text-xs text-gray-500 mb-2">
+                      Get a free API key at{' '}
+                      <a
+                        href="https://golfcourseapi.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-masters-green underline"
+                      >
+                        golfcourseapi.com
+                      </a>{' '}
+                      to search any course worldwide and auto-fill pars.
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={apiKeyInput}
+                        onChange={e => setApiKeyInput(e.target.value)}
+                        placeholder="Paste your API key…"
+                        className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-masters-green"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveApiKey}
+                        className="bg-masters-green text-white text-sm font-bold px-4 py-2 rounded-xl shrink-0"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Holes Toggle */}
