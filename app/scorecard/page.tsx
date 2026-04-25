@@ -1,22 +1,23 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Game } from '@/types'
 import { getGameById } from '@/lib/storage'
 import { format } from 'date-fns'
 import MastersHeader from '@/components/ui/MastersHeader'
-import Badge from '@/components/ui/Badge'
 import ScoreCard from '@/components/game/ScoreCard'
 import Button from '@/components/ui/Button'
 
-export default function GameDetail() {
+function ScorecardInner() {
   const router = useRouter()
-  const { id } = useParams<{ id: string }>()
+  const searchParams = useSearchParams()
+  const id = searchParams.get('id') ?? ''
   const [game, setGame] = useState<Game | null>(null)
 
   useEffect(() => {
+    if (!id) { router.replace('/'); return }
     const g = getGameById(id)
     if (!g) { router.replace('/'); return }
     setGame(g)
@@ -25,7 +26,7 @@ export default function GameDetail() {
   if (!game) {
     return (
       <div className="flex items-center justify-center flex-1">
-        <div className="text-gray-400 animate-pulse">Loading...</div>
+        <div className="text-gray-400 animate-pulse text-sm">Loading...</div>
       </div>
     )
   }
@@ -110,5 +111,17 @@ export default function GameDetail() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function Scorecard() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center flex-1">
+        <div className="text-gray-400 animate-pulse text-sm">Loading...</div>
+      </div>
+    }>
+      <ScorecardInner />
+    </Suspense>
   )
 }

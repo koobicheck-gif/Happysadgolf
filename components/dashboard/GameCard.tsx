@@ -13,7 +13,7 @@ interface GameCardProps {
 export default function GameCard({ game, index }: GameCardProps) {
   const scored = game.holes.filter(h => h.emoji !== null).length
   const isComplete = game.result !== 'in-progress'
-  const href = isComplete ? `/game/${game.id}` : `/game/${game.id}/play`
+  const href = isComplete ? `/scorecard?id=${game.id}` : `/play?id=${game.id}`
 
   const dateLabel = (() => {
     try { return format(new Date(game.date), 'MMM d, yyyy') } catch { return game.date }

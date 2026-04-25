@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Game, Hole, EmojiResult } from '@/types'
 import { getGameById, saveGame, setCurrentGameId } from '@/lib/storage'
@@ -11,9 +11,11 @@ import HoleNavigator from '@/components/game/HoleNavigator'
 import StrokeCounter from '@/components/game/StrokeCounter'
 import Button from '@/components/ui/Button'
 
-export default function PlayGame() {
+function PlayGameInner() {
   const router = useRouter()
-  const { id } = useParams<{ id: string }>()
+  const searchParams = useSearchParams()
+  const id = searchParams.get('id') ?? ''
+
   const [game, setGame] = useState<Game | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showStrokes, setShowStrokes] = useState(false)
@@ -21,10 +23,10 @@ export default function PlayGame() {
   const [justScored, setJustScored] = useState(false)
 
   useEffect(() => {
+    if (!id) { router.replace('/'); return }
     const g = getGameById(id)
     if (!g) { router.replace('/'); return }
-    if (g.result !== 'in-progress') { router.replace(`/game/${id}`); return }
-    // resume at first un-scored hole
+    if (g.result !== 'in-progress') { router.replace(`/scorecard?id=${id}`); return }
     const firstUnscoredIdx = g.holes.findIndex(h => h.emoji === null)
     setCurrentIndex(firstUnscoredIdx >= 0 ? firstUnscoredIdx : 0)
     setGame(g)
@@ -59,8 +61,6 @@ export default function PlayGame() {
     )
     updateAndSave(updatedHoles)
     setJustScored(true)
-
-    // Auto-advance after brief delay
     if (!isLastHole) {
       setTimeout(() => {
         setCurrentIndex(prev => prev + 1)
@@ -83,27 +83,25 @@ export default function PlayGame() {
   const handleFinish = () => {
     if (!game || !allScored) return
     setFinishing(true)
-    const updatedHoles = game.holes
-    const { happyCount, sadCount } = countEmojis(updatedHoles)
-    const result = calculateResult(updatedHoles)
+    const { happyCount, sadCount } = countEmojis(game.holes)
+    const result = calculateResult(game.holes)
     const final: Game = {
       ...game,
-      holes: updatedHoles,
       happyCount,
       sadCount,
       result,
-      totalStrokes: getTotalStrokes(updatedHoles),
+      totalStrokes: getTotalStrokes(game.holes),
       completedAt: new Date().toISOString(),
     }
     saveGame(final)
     setCurrentGameId(null)
-    router.push(`/game/${id}`)
+    router.push(`/scorecard?id=${id}`)
   }
 
   if (!game || !currentHole) {
     return (
       <div className="flex items-center justify-center flex-1">
-        <div className="text-gray-400 animate-pulse">Loading...</div>
+        <div className="text-gray-400 animate-pulse text-sm">Loading...</div>
       </div>
     )
   }
@@ -260,5 +258,17 @@ export default function PlayGame() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function PlayGame() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center flex-1">
+        <div className="text-gray-400 animate-pulse text-sm">Loading...</div>
+      </div>
+    }>
+      <PlayGameInner />
+    </Suspense>
   )
 }

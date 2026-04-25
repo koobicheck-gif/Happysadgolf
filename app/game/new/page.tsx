@@ -33,7 +33,7 @@ export default function NewGame() {
 
     saveGame(game)
     setCurrentGameId(id)
-    router.push(`/game/${id}/play`)
+    router.push(`/play?id=${id}`)
   }
 
   return (
