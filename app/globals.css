@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-masters-green: #006747;
+  --color-masters-green-dark: #004d35;
+  --color-masters-green-light: #e8f5ef;
+  --color-masters-gold: #C9A84C;
+  --color-masters-gold-light: #f5e9cc;
+  --color-masters-cream: #F5F0E8;
+  --color-masters-dark: #1A2E1A;
+
+  --color-happy: #16a34a;
+  --color-happy-light: #dcfce7;
+  --color-happy-dark: #14532d;
+
+  --color-sad: #dc2626;
+  --color-sad-light: #fee2e2;
+  --color-sad-dark: #7f1d1d;
+
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  --animate-bounce-in: bounceIn 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  --animate-fade-up: fadeUp 0.3s ease-out;
+
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.1); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes fadeUp {
+    0% { transform: translateY(10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+}
+
+:root {
+  --masters-green: #006747;
+  --masters-gold: #C9A84C;
+  --masters-cream: #F5F0E8;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--masters-cream);
+  font-family: "Inter", system-ui, sans-serif;
+  overscroll-behavior: none;
+}

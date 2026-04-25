@@ -1,0 +1,2 @@
+export const DEFAULT_PARS_18: number[] = [4,4,4,3,5,3,4,5,4, 4,4,3,5,4,5,3,4,4]
+export const DEFAULT_PARS_9: number[] = [4,4,4,3,5,3,4,5,4]
