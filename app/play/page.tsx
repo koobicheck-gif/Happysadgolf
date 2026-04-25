@@ -1,7 +1,8 @@
 'use client'
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import confetti from 'canvas-confetti'
 import { Game, Hole, EmojiResult } from '@/types'
 import { getGameById, saveGame, setCurrentGameId } from '@/lib/storage'
 import { calculateResult, countEmojis, getTotalStrokes } from '@/lib/gameUtils'
@@ -9,6 +10,7 @@ import MastersHeader from '@/components/ui/MastersHeader'
 import EmojiButton from '@/components/game/EmojiButton'
 import HoleNavigator from '@/components/game/HoleNavigator'
 import StrokeCounter from '@/components/game/StrokeCounter'
+import FireParticles from '@/components/game/FireParticles'
 import Button from '@/components/ui/Button'
 
 function PlayGameInner() {
@@ -21,6 +23,8 @@ function PlayGameInner() {
   const [showStrokes, setShowStrokes] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [justScored, setJustScored] = useState(false)
+  const [fireTrigger, setFireTrigger] = useState(0)
+  const happyBtnRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!id) { router.replace('/'); return }
@@ -54,6 +58,31 @@ function PlayGameInner() {
     return updated
   }, [game])
 
+  const fireConfetti = () => {
+    const el = happyBtnRef.current
+    const rect = el?.getBoundingClientRect()
+    const x = rect ? (rect.left + rect.width / 2) / window.innerWidth : 0.5
+    const y = rect ? (rect.top + rect.height / 2) / window.innerHeight : 0.5
+    confetti({
+      particleCount: 80,
+      spread: 70,
+      origin: { x, y },
+      colors: ['#006747', '#C9A84C', '#ffffff', '#16a34a', '#fbbf24'],
+      scalar: 1.1,
+      gravity: 0.9,
+    })
+    // second burst for extra flair
+    setTimeout(() => {
+      confetti({
+        particleCount: 40,
+        spread: 50,
+        origin: { x: x - 0.1, y },
+        colors: ['#006747', '#C9A84C', '#dcfce7'],
+        scalar: 0.8,
+      })
+    }, 150)
+  }
+
   const handleEmojiSelect = (emoji: EmojiResult) => {
     if (!game || justScored) return
     const updatedHoles = game.holes.map((h, i) =>
@@ -61,6 +90,10 @@ function PlayGameInner() {
     )
     updateAndSave(updatedHoles)
     setJustScored(true)
+
+    if (emoji === 'happy') fireConfetti()
+    if (emoji === 'sad') setFireTrigger(t => t + 1)
+
     if (!isLastHole) {
       setTimeout(() => {
         setCurrentIndex(prev => prev + 1)
@@ -157,11 +190,13 @@ function PlayGameInner() {
             transition={{ duration: 0.2 }}
             className="grid grid-cols-2 gap-4 flex-1 max-h-64"
           >
-            <EmojiButton
-              type="happy"
-              selected={currentHole.emoji === 'happy'}
-              onSelect={() => handleEmojiSelect('happy')}
-            />
+            <div ref={happyBtnRef} className="h-full">
+              <EmojiButton
+                type="happy"
+                selected={currentHole.emoji === 'happy'}
+                onSelect={() => handleEmojiSelect('happy')}
+              />
+            </div>
             <EmojiButton
               type="sad"
               selected={currentHole.emoji === 'sad'}
@@ -169,6 +204,8 @@ function PlayGameInner() {
             />
           </motion.div>
         </AnimatePresence>
+
+        <FireParticles trigger={fireTrigger} />
 
         {/* Stroke counter toggle */}
         <div>
